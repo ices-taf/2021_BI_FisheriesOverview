@@ -2,7 +2,6 @@
 
 library("icesVMS")
 
-icesVMS::update_token("adriana.villamor")
 vms_effort <- icesVMS::get_effort_map("Bay of Biscay and the Iberian Coast")
 
 # convert to sf
