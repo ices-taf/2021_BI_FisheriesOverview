@@ -4,4 +4,4 @@ taf.library(icesFO)
 
 sid <- load_sid(2021)
 
-write.taf(sid, file = "bootstrap/data/ICES_StockInformation/sid.csv", quote = TRUE)
+write.taf(sid, file = "sid.csv", quote = TRUE)
