@@ -12,16 +12,13 @@ library(dplyr)
 
 frmt_effort <- read.taf("data/frmt_effort.csv")
 frmt_landings <- read.taf("data/frmt_landings.csv")
-frmt_effort <- effort_BI
-check <- effort_BI %>% filter(total.kW.days.at.sea == "C")
-unique(check$country.code)
-frmt_effort <- frmt_effort %>% filter(total.kW.days.at.sea != "C")
-frmt_landings <- landings_BI
-frmt_landings <- frmt_landings %>% filter(total.live.weight.landed..tonnes. != "C")
 
 ################################
 ## 2: STECF effort and landings#
 ################################
+
+bi_df$country <- bi_df$`country name`
+bi_df$total.kW.days.at.sea <- bi_df$`total kW days at sea`
 
 #~~~~~~~~~~~~~~~#
 # Effort by country
@@ -30,16 +27,17 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
         
         if(type == "effort"){
                 if(variable=="COUNTRY"){
-                        dat <- dplyr::rename_(frmt_effort, "type_var" ="country.name",
-                                              "VALUE" = "total.kW.days.at.sea")}
+                        dat <- dplyr::rename(bi_df, "type_var" = "country",
+                                              "VALUE" = "total.kW.days.at.sea")
+                        }
                 if(variable=="GEAR"){
-                        dat <- dplyr::rename_(x, "type_var" ="GEAR",
-                                              "VALUE" = "EFFORT")
+                        dat <- dplyr::rename(bi_df, "type_var" ="gear_class",
+                                              "VALUE" = "total.kW.days.at.sea")
                 }
                 Label <- "Nominal effort (1000 kW days at sea)"
         }
         if(type == "landings"){
-                dat <- dplyr::rename(frmt_landings, "type_var" ="gear_class",
+                dat <- dplyr::rename(landings_BtS, "type_var" ="gear_class",
                                      "VALUE" = "total.live.weight.landed..tonnes.")
                 Label <- "Landings (thousand tonnes)"
         }
@@ -47,7 +45,6 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
         dat$type_var <- as.factor(dat$type_var)
         
         dat$VALUE <- as.numeric(dat$VALUE)
-        dat <- dat[complete.cases(dat$VALUE),]
         Plot <- dplyr::group_by(dat,type_var)
         Plot <- dplyr::summarise(Plot,typeTotal = sum(VALUE, na.rm = TRUE))
         Plot <- dplyr::arrange(Plot,-typeTotal)        
@@ -57,10 +54,11 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
         Plot <- subset(Plot,select = -typeTotal)
         dat <- dplyr::left_join(dat, Plot)
         # dat <- dat[complete.cases(dat), ]
-        dat <- dplyr::mutate(dat, type_var = replace(type_var, RANK > 4, "other"))
-        dat$type_var <- as.character(dat$type_var)
-        dat$type_var[is.na(dat$type_var)] <- "other"
-        dat$type_var <- as.factor(dat$type_var)
+        # dat <- dat %>% filter(typeTotal>0)
+        
+        # confidential data here, "Belgium"     "Denmark"     "Spain"       "France"      "Ireland"     "Netherlands" "Poland"      "Portugal"   
+        dat <- dat %>% filter(confidential == "N")
+        dat <- dplyr::mutate(dat, type_var = replace(type_var, RANK > 7, "other"))
         dat <- dplyr::group_by(dat,type_var, year) 
         dat <- dplyr::summarise(dat, typeTotal = sum(VALUE, na.rm = TRUE))
         dat <- dplyr::filter(dat,!is.na(year))
@@ -68,15 +66,14 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
         dat <- rbind(dat[!dat$type_var == "other",],
                      dat[dat$type_var == "other",])
         
-        my_caption = sprintf("STECF %s. Accessed %s/%s.",
-                             "19-11",
-                             "August",
-                             "2020")
+        my_caption = sprintf("STECF. Accessed %s/%s.",
+                             "October",
+                             "2021")
         
         cap_lab <- ggplot2::labs(title = "", x = "", y = Label,
                                  caption = my_caption)
         
-        colList <- ggthemes::tableau_color_pal('Tableau 20')(15)
+        colList <- ggthemes::tableau_color_pal('Tableau 20')(7 + 1)
         
         order <- dplyr::group_by(dat, type_var)
         order <- dplyr::summarise(order, total = sum(typeTotal, na.rm = TRUE))
@@ -136,13 +133,13 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
 }
 
 
-#Plot
-plot_stecf(frmt_effort,type = "effort", variable= "COUNTRY", "2020","November", 4, "19-11", return_data = FALSE)
-# frmt_effort <- dplyr::filter(frmt_effort, COUNTRY %in% c("Sweden", "Poland", "Germany", "Denmark", "Lithuania","Latvia"))
-# plot_stecf(frmt_effort,type = "effort", variable= "COUNTRY", "2019","August", 9, "15-23", return_data = FALSE)
+        #Plot
+plot_stecf(frmt_effort,type = "effort", variable= "COUNTRY", "2019","August", 9, "15-23", return_data = FALSE)
+frmt_effort <- dplyr::filter(frmt_effort, COUNTRY %in% c("Sweden", "Poland", "Germany", "Denmark", "Lithuania","Latvia"))
+plot_stecf(frmt_effort,type = "effort", variable= "COUNTRY", "2019","August", 9, "15-23", return_data = FALSE)
 ggplot2::ggsave(paste0(year_cap, "_", ecoreg,"_FO_STECF_effortCountry.png"), path = "report/", width = 178, height = 130, units = "mm", dpi = 300)
-#data
-dat <- plot_stecf(frmt_effort,type = "effort", variable= "COUNTRY", "2020","November", 8, "19-11", return_data = TRUE)
+        #data
+dat <- plot_stecf(frmt_effort,type = "effort", variable= "COUNTRY", "2019","August", 9, "15-23", return_data = TRUE)
 write.taf(dat, file= paste0(year_cap, "_", ecoreg,"_FO_STECF_effortCountry.csv"), dir = "report")
 
 
@@ -153,16 +150,16 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
         
         if(type == "effort"){
                 if(variable=="COUNTRY"){
-                        dat <- dplyr::rename_(frmt_effort, "type_var" ="country.name",
+                        dat <- dplyr::rename_(effort_BtS, "type_var" ="country.name",
                                               "VALUE" = "total.kW.days.at.sea")}
                 if(variable=="GEAR"){
-                        dat <- dplyr::rename_(frmt_effort, "type_var" ="gear_class",
+                        dat <- dplyr::rename_(effort_BtS, "type_var" ="gear_class",
                                               "VALUE" = "total.kW.days.at.sea")
                 }
                 Label <- "Nominal effort (1000 kW days at sea)"
         }
         if(type == "landings"){
-                dat <- dplyr::rename(frmt_landings, "type_var" ="gear_class",
+                dat <- dplyr::rename(landings_BtS, "type_var" ="gear_class",
                                      "VALUE" = "total.live.weight.landed..tonnes.")
                 Label <- "Landings (thousand tonnes)"
         }
@@ -195,7 +192,7 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
         cap_lab <- ggplot2::labs(title = "", x = "", y = Label,
                                  caption = my_caption)
         
-        colList <- ggthemes::tableau_color_pal('Tableau 20')(15)
+        colList <- ggthemes::tableau_color_pal('Tableau 20')(7 + 1)
         
         order <- dplyr::group_by(dat, type_var)
         order <- dplyr::summarise(order, total = sum(typeTotal, na.rm = TRUE))
@@ -258,11 +255,11 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
 
 
 
-#Plot
-plot_stecf(frmt_effort,type = "effort", variable= "GEAR", "2020","November", 9, "19-11")
+        #Plot
+plot_stecf(frmt_effort,type = "effort", variable= "GEAR", "2019","August", 9, "15-23")
 ggplot2::ggsave(paste0(year_cap, "_", ecoreg,"_FO_STECF_effortGear.png"), path = "report/", width = 178, height = 130, units = "mm", dpi = 300)
 
-#data
+        #data
 dat<-plot_stecf(frmt_effort,type = "effort", variable= "GEAR", "2019","August", 9, "15-23", return_data = TRUE)
 write.taf(dat, file= paste0(year_cap, "_", ecoreg,"_FO_STECF_effortGear.csv"), dir = "report")
 
@@ -282,8 +279,8 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
                 Label <- "Nominal effort (1000 kW days at sea)"
         }
         if(type == "landings"){
-                dat <- dplyr::rename(frmt_landings, "type_var" ="gear_class",
-                                     "VALUE" = "total.live.weight.landed..tonnes.")
+                dat <- dplyr::rename(bi_df, "type_var" ="gear_class",
+                                      "VALUE" = "total live weight landed (tonnes)")
                 Label <- "Landings (thousand tonnes)"
         }
         
@@ -307,15 +304,14 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
         dat <- rbind(dat[!dat$type_var == "other",],
                      dat[dat$type_var == "other",])
         
-        my_caption = sprintf("STECF %s. Accessed %s/%s.",
-                             "19-11",
-                             "August",
-                             "2020")
+        my_caption = sprintf("STECF. Accessed %s/%s.",
+                             "October",
+                             "2021")
         
         cap_lab <- ggplot2::labs(title = "", x = "", y = Label,
                                  caption = my_caption)
         
-        colList <- ggthemes::tableau_color_pal('Tableau 20')(15)
+        colList <- ggthemes::tableau_color_pal('Tableau 20')(6 + 1)
         
         order <- dplyr::group_by(dat, type_var)
         order <- dplyr::summarise(order, total = sum(typeTotal, na.rm = TRUE))
@@ -374,11 +370,13 @@ plot_stecf <- function(x, type, variable = NULL, cap_year, cap_month, line_count
         }
 }
 
+# confidential landings all years:
+# "Belgium"     "Denmark"     "Spain"       "France"      "Ireland"     "Netherlands" "Poland"      "Portugal"   
 
 
-#Plot
-plot_stecf(frmt_landings,type = "landings", variable= "GEAR", "2020","November", 9, "19-11")
+        #Plot
+plot_stecf(frmt_landings,type = "landings", variable= "GEAR", "2019","August", 9, "15-23")
 ggplot2::ggsave(paste0(year_cap, "_", ecoreg,"_FO_STECF_landings.png"), path = "report/", width = 178, height = 130, units = "mm", dpi = 300)
-#dat
+        #dat
 dat <- plot_stecf(frmt_landings, type = "landings", variable="landings", "2019","August", 9, "15-23", return_data = TRUE)
 write.taf(dat, file= paste0(year_cap, "_", ecoreg,"_FO_STECF_landings.csv"), dir = "report")

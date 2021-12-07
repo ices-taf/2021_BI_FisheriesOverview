@@ -18,10 +18,10 @@ clean_status <- read.taf("data/clean_status.csv")
 
 #set year and month for captions:
 cap_month = "November"
-cap_year = "2020"
+cap_year = "2021"
 # set year for plot calculations
 
-year = 2020
+year = 2021
 
 
 ###########
@@ -170,7 +170,7 @@ write.taf(bar_dat, file =paste0(year_cap, "_", ecoreg, "_FO_SAG_Current_crustace
 
 kobe <- plot_kobe(catch_current, guild = "crustacean", caption = TRUE, cap_year , cap_month , return_data = FALSE)
 #check this file name
-png("report/2020_BI_FO_SAG_Current_crustacean.png",
+png("report/2021_BI_FO_SAG_Current_crustacean.png",
     width = 131.32,
     height = 88.9,
     units = "mm",
@@ -236,7 +236,7 @@ catch_trends3 <- catch_trends2 %>% filter(discards > 0)
 discardsB <- plot_discard_current(catch_trends3, year,position_letter = "b)", cap_year , cap_month , caption = FALSE)
 # nothing comes out here, because no spurdog assessment
 
-discardsC <- plot_discard_current(catch_trends2, year,position_letter = "c)", cap_year , cap_month )
+discardsC <- plot_discard_current(catch_trends2, year,position_letter = "c)", cap_year , cap_month, caption = TRUE )
 
 #Need to change order?
 dat <- plot_discard_current(catch_trends, year, cap_year, cap_month , return_data = TRUE)
