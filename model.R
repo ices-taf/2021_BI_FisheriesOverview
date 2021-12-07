@@ -4,7 +4,7 @@
 
 library(icesTAF)
 library(dplyr)
-taf.library(icesFO)
+library(icesFO)
 
 mkdir("model")
 clean_sag$MSYBtrigger[which(clean_sag$StockKeyLabel == "ank.27.78abd")] <- "1"
