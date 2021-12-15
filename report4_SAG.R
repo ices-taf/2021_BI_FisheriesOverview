@@ -133,6 +133,7 @@ write.taf(dat, file =paste0(year_cap, "_", ecoreg, "_EO_SAG_SpeciesGuildList.csv
 
 bar <- plot_CLD_bar(catch_current, guild = "demersal", caption = TRUE, cap_year, cap_month, return_data = FALSE)
 catch_current <- catch_current %>% filter(StockKeyLabel != "ele.2737.nea")
+catch_current$Status[which(catch_current$StockKeyLabel == "hke.27.3a46-8abd")] <- "GREEN"
 # catch_current <- catch_current %>% filter(StockKeyLabel != "pol.27.67")
 bar <- plot_CLD_bar(catch_current, guild = "demersal", caption = TRUE, cap_year, cap_month, return_data = FALSE)
 bar_dat <- plot_CLD_bar(catch_current, guild = "demersal", caption = TRUE, cap_year , cap_month , return_data = TRUE)
